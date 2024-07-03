@@ -2,9 +2,17 @@
 *.log
 *.log.*
 node_modules
-
-out/
-dist/
-code.js
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+yarn.lock
+package-lock.json
+.pnp
+.pnp.js
+.env
+.env.local
+.env.development
+.env.test
+pnpm-lock.yaml
 
 .DS_Store
