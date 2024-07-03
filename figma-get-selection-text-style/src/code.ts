@@ -1,18 +1,33 @@
 figma.showUI(__html__, { width: 480, height: 480 });
 
+function checkNodeIsText(node: SceneNode): node is TextNode {
+  try {
+    return node.type === "TEXT" && !!node.textStyleId;
+  } catch {
+    return false;
+  }
+}
+function recursiveFindText(node: SceneNode): TextNode | null {
+  if (checkNodeIsText(node)) return node;
+  if ("children" in node) {
+    for (const child of node.children) {
+      const textNode = recursiveFindText(child);
+      if (textNode) return textNode;
+    }
+  }
+  return null;
+}
+
 function getTextNodeStyleId(
   selection: readonly SceneNode[],
   type: "textStyleId" | "fillStyleId" = "textStyleId"
 ) {
-  const currentNode = selection.find(
-    (node) => node.type === "TEXT"
+  const currentNode = selection.find((node) =>
+    checkNodeIsText(node)
   ) as TextNode;
   if (currentNode) return String(currentNode[type]);
-  const children = (selection[0] as FrameNode).children;
-  if (!children || children.length === 0) return "";
-  const textNode = children.find(
-    (node) => node.type === "TEXT" && node.textStyleId
-  ) as TextNode;
+  const textNode = recursiveFindText(selection[0]);
+  if (!textNode) return "";
   return String(textNode[type]);
 }
 

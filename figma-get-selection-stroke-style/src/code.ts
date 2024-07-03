@@ -1,3 +1,16 @@
+function recursiveFindStrokeNode(node: SceneNode): InstanceNode | null {
+  if (node.type !== "TEXT" && "strokeStyleId" in node) {
+    return node as InstanceNode;
+  }
+  if ("children" in node) {
+    for (const child of node.children) {
+      const strokeNode = recursiveFindStrokeNode(child);
+      if (strokeNode) return strokeNode;
+    }
+  }
+  return null;
+}
+
 function getStyleId(selection: readonly SceneNode[]) {
   const currentNode = selection.find(
     (node) => node.type !== "TEXT"
@@ -8,15 +21,8 @@ function getStyleId(selection: readonly SceneNode[]) {
       cornerRadius: Number(currentNode.cornerRadius ?? 0),
     };
   }
-  const children = (selection[0] as FrameNode).children;
-  if (!children || children.length === 0)
-    return {
-      id: "",
-      cornerRadius: 0,
-    };
-  const findNode = children.find(
-    (node) => node.type !== "TEXT"
-  ) as InstanceNode;
+  const findNode = recursiveFindStrokeNode(selection[0]);
+  if (!findNode) return { id: "", cornerRadius: 0 };
   return {
     id: String(findNode["strokeStyleId"]),
     cornerRadius: Number(findNode.cornerRadius ?? 0),

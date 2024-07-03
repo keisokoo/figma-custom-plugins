@@ -1,3 +1,18 @@
+function recursiveFindFillNode(node: SceneNode): InstanceNode {
+  if (
+    node.type !== "TEXT" &&
+    ("backgroundStyleId" in node || "fillStyleId" in node)
+  ) {
+    return node as InstanceNode;
+  }
+  if ("children" in node) {
+    for (const child of (node as unknown as InstanceNode).children) {
+      const fillNode = recursiveFindFillNode(child);
+      if (fillNode) return fillNode;
+    }
+  }
+  return null;
+}
 function getStyleId(selection: readonly SceneNode[]) {
   const currentNode = selection.find(
     (node) => node.type !== "TEXT"
@@ -10,9 +25,8 @@ function getStyleId(selection: readonly SceneNode[]) {
       currentNode["backgroundStyleId"] ?? currentNode["fillStyleId"]
     );
   }
-  const children = (selection[0] as FrameNode).children;
-  if (!children || children.length === 0) return "";
-  const findNode = children.find((node) => node.type !== "TEXT");
+  const findNode = recursiveFindFillNode(selection[0]);
+  if (!findNode) return "";
   return String(findNode["backgroundStyleId"] ?? findNode["fillStyleId"]);
 }
 
