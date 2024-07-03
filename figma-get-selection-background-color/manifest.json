@@ -1,0 +1,10 @@
+{
+  "name": "ccb-background-color-style",
+  "id": "1126013767711922057",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "editorType": ["dev", "figma"],
+  "documentAccess": "dynamic-page",
+  "ui": "dist/ui.html",
+  "capabilities": ["inspect", "vscode"]
+}

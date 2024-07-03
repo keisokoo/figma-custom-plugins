@@ -1,0 +1,27 @@
+<h4>Styles to JSON by 9</h4>
+<textarea id="text" style="width: 100%; min-height: 200px"></textarea>
+<script>
+  function copyToClipboard(textArea, textToCopy) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(textToCopy);
+    } else {
+      textArea.value = textToCopy;
+      textArea.focus();
+      textArea.select();
+      return new Promise((res, rej) => {
+        document.execCommand("copy") ? res() : rej();
+        setTimeout(() => {
+          parent.postMessage({ pluginMessage: { type: "cancel" } }, "*");
+        }, 0);
+      });
+    }
+  }
+  onmessage = (event) => {
+    if (event.data.pluginMessage) {
+      const textbox = document.getElementById("text");
+      const msg = event.data.pluginMessage.text;
+      textbox.innerText = msg;
+      copyToClipboard(textbox, msg);
+    }
+  };
+</script>

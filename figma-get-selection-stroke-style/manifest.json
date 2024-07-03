@@ -1,0 +1,10 @@
+{
+  "name": "ccs-stroke-style",
+  "id": "1390302906269395741",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "editorType": ["dev", "figma"],
+  "documentAccess": "dynamic-page",
+  "ui": "dist/ui.html",
+  "capabilities": ["inspect", "vscode"]
+}

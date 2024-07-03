@@ -1,0 +1,10 @@
+{
+  "name": "cct-text-style",
+  "id": "1390281316175461070",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "editorType": ["dev", "figma"],
+  "documentAccess": "dynamic-page",
+  "ui": "dist/ui.html",
+  "capabilities": ["inspect", "vscode"]
+}
