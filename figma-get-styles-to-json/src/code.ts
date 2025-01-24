@@ -176,22 +176,23 @@ async function getLocalTextStyles() {
       let pushObj = {
         name: text.name,
         groupName: splitWithWordCase(text.name, "/"),
-        css: {
-          fontSize: `${text.fontSize}px`,
-          fontWeight: `${fontWeight}`,
-          letterSpacing: `${
+        css: `
+          font-size: ${text.fontSize}px;
+          font-weight: ${fontWeight};
+          letter-spacing: ${
             text.letterSpacing.unit === "PERCENT"
               ? text.letterSpacing.value + "%"
               : text.letterSpacing.value + "px"
-          }`,
-          ...(text.lineHeight.unit !== "AUTO" && {
-            lineHeight: `${
+          };
+          ${
+            text.lineHeight.unit !== "AUTO" &&
+            `line-height: ${
               text.lineHeight.unit === "PERCENT"
                 ? text.lineHeight.value + "%"
                 : text.lineHeight.value + "px"
-            }`,
-          }),
-        },
+            };`
+          }
+        `,
       };
       return pushObj;
     })
@@ -208,23 +209,16 @@ async function main() {
   const localBackgroundColors = await getBackgroundColor();
 
   const allColors = merge(localSolidColors, localBackgroundColors);
-  const onlyKeysValueIsNullColors = Object.keys(allColors).reduce(
-    (prev, curr) => {
-      prev[curr] = null;
-      return prev;
-    },
-    {} as { [key: string]: null }
-  );
   figma.ui.postMessage({
     type: "styles",
     text: `
-const typography = ${JSON.stringify(localTextStyles, null, 2)};
+const typography = ${JSON.stringify(localTextStyles, null, 2)} as const;
 
 const colors = ${JSON.stringify(allColors, null, 2)};
 export const figmaVars = {
   typography,
   colors,
-};
+} as const;
     `,
   });
 }
