@@ -47,7 +47,7 @@ async function getSelectionStyle() {
   return {
     textStyle,
     fillStyle,
-    code: `...getTextStyles("${colorStyleCode}", "${textStyleCode}")`,
+    code: `getTextStyles("${colorStyleCode}", "${textStyleCode}")`,
   };
 }
 async function main() {

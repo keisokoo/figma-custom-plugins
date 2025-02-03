@@ -40,7 +40,7 @@ async function getSelectionStyle() {
   const colorStyleCode = fillStyle ? fillStyle.name : "";
   return {
     fillStyle,
-    code: `...getBgColor("${colorStyleCode}")`,
+    code: `getBgColor("${colorStyleCode}")`,
   };
 }
 async function main() {

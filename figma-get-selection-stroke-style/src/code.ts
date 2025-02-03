@@ -19,13 +19,17 @@ function getStyleId(selection: readonly SceneNode[]) {
     return {
       id: String(currentNode["strokeStyleId"]),
       cornerRadius: Number(currentNode.cornerRadius ?? 0),
+      strokeWeight: Number(currentNode.strokeWeight ?? 0),
     };
   }
   const findNode = recursiveFindStrokeNode(selection[0]);
-  if (!findNode) return { id: "", cornerRadius: 0 };
+  if (!findNode) return { id: "", cornerRadius: 0, strokeWeight: 0 };
+  const frameNode = findNode as unknown as FrameNode;
+  const strokeWeight = frameNode.strokeWeight;
   return {
     id: String(findNode["strokeStyleId"]),
     cornerRadius: Number(findNode.cornerRadius ?? 0),
+    strokeWeight: Number(strokeWeight ?? 0),
   };
 }
 
@@ -40,7 +44,7 @@ async function getSelectionStyle() {
   return {
     fillStyle,
     radius: fillStyleItem.cornerRadius,
-    code: `...getBorder(1, "${colorStyleCode}", ${fillStyleItem.cornerRadius})`,
+    code: `getBorder(${fillStyleItem.strokeWeight}, "${colorStyleCode}", ${fillStyleItem.cornerRadius})`,
   };
 }
 async function main() {
