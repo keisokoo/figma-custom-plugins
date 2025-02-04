@@ -15,10 +15,12 @@
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
-      return new Promise((res, rej) => {
-        document.execCommand("copy") ? res() : rej();
-        textArea.remove();
-      });
+      const success = document.execCommand("copy");
+      if (!success) {
+        alert("복사 실패");
+      }
+      textArea.remove();
+      return true;
     }
   }
   onmessage = (event) => {
