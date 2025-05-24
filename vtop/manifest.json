@@ -1,0 +1,11 @@
+{
+  "name": "figma-export-variables",
+  "id": "1508080242529471307",
+  "api": "1.0.0",
+  "editorType": ["dev"],
+  "permissions": [],
+  "main": "code.js",
+  "ui": { "export": "export.html" },
+  "documentAccess": "dynamic-page",
+  "capabilities": ["inspect", "vscode"]
+}
