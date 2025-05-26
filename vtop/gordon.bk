@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // console.clear();
 
@@ -46,7 +47,7 @@ async function getLocalTextStyles() {
         .filter(Boolean)
         .reduce((acc, v) => {
           if (v) {
-            acc[v.name] = `{typo.${v.value.replace(/\//g, ".")}}`;
+            acc[v.name] = `{typo.${v.value}}`;
           }
           return acc;
         }, {} as Record<string, string>);
@@ -57,6 +58,34 @@ async function getLocalTextStyles() {
   }
   return styles;
 }
+
+// typo 객체를 평평하게 만드는 함수
+function flattenTypo(obj: any, prefix = ""): Record<string, { value: any }> {
+  const result: Record<string, { value: any }> = {};
+
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      const newKey = prefix ? `${prefix}/${key}` : key;
+
+      if (
+        obj[key] &&
+        typeof obj[key] === "object" &&
+        !obj[key].hasOwnProperty("value")
+      ) {
+        // 중첩된 객체인 경우 재귀적으로 처리
+        Object.assign(result, flattenTypo(obj[key], newKey));
+      } else {
+        // 최종 값이거나 value 속성을 가진 객체인 경우
+        result[newKey] = {
+          value: obj[key].value || obj[key],
+        };
+      }
+    }
+  }
+
+  return result;
+}
+
 async function exportToJSON() {
   const textStyles = await getLocalTextStyles();
   const collections = await figma.variables.getLocalVariableCollectionsAsync();
@@ -75,7 +104,7 @@ async function exportToJSON() {
   const fixJson = {
     tokens: themeJson.tokens,
     semanticTokens: Object.assign({}, themeJson.semanticTokens, {
-      typo: themeJson.typo,
+      typo: themeJson.typo ? flattenTypo(themeJson.typo) : {},
     }),
     textStyles,
   };
