@@ -1,7 +1,64 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // console.clear();
 
+async function getVariable(key: string, alias: VariableAlias | undefined) {
+  if (!alias) {
+    return null;
+  }
+  return {
+    name: key,
+    value: await figma.variables.getVariableByIdAsync(alias.id),
+  };
+}
+
+async function getLocalTextStyles() {
+  const textStyles: TextStyle[] = await figma.getLocalTextStylesAsync();
+  const styles: Record<
+    string,
+    {
+      value: {
+        [key: string]: string;
+      };
+    }
+  > = {};
+  for (const textStyle of textStyles) {
+    const boundVariables = textStyle.boundVariables;
+    if (boundVariables) {
+      const values = await Promise.all(
+        Object.keys(boundVariables)
+          .map((key) => {
+            if (key === "fontFamily") return null;
+            const variable = boundVariables[key as keyof typeof boundVariables];
+            return getVariable(key, variable);
+          })
+          .filter(Boolean)
+      );
+      const textStyleValues = values
+        .map((v) => {
+          if (v && v.value) {
+            return {
+              name: v.name,
+              value: v.value && v.value.name,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean)
+        .reduce((acc, v) => {
+          if (v) {
+            acc[v.name] = `{typo/${v.value}}`;
+          }
+          return acc;
+        }, {} as Record<string, string>);
+      styles[textStyle.name] = {
+        value: textStyleValues,
+      };
+    }
+  }
+  return styles;
+}
 async function exportToJSON() {
+  const textStyles = await getLocalTextStyles();
   const collections = await figma.variables.getLocalVariableCollectionsAsync();
   const files = [];
   for (const collection of collections) {
@@ -14,19 +71,22 @@ async function exportToJSON() {
     },
     {} as Record<string, any>
   );
-  console.log("themeJson", themeJson);
 
   const fixJson = {
     tokens: themeJson.tokens,
     semanticTokens: Object.assign({}, themeJson.semanticTokens, {
       typo: themeJson.typo,
     }),
+    textStyles,
   };
-  figma.ui.postMessage({ type: "EXPORT_RESULT", themeJson: fixJson });
+  figma.ui.postMessage({
+    type: "EXPORT_RESULT",
+    themeJson: fixJson,
+    textStyles,
+  });
 }
 
 async function processCollection(collection: VariableCollection) {
-  console.log("processing collection", collection);
   const { name, modes, variableIds } = collection;
   const files = [];
   for (const mode of modes) {
@@ -35,7 +95,10 @@ async function processCollection(collection: VariableCollection) {
       const { name, resolvedType, valuesByMode } =
         (await figma.variables.getVariableByIdAsync(variableId)) as Variable;
       const value = valuesByMode[mode.modeId] as any;
-      if (value !== undefined && ["COLOR", "FLOAT"].includes(resolvedType)) {
+      if (
+        value !== undefined &&
+        ["COLOR", "FLOAT", "STRING"].includes(resolvedType)
+      ) {
         let obj = file.body as Record<string, any>;
         name.split("/").forEach((groupName: string) => {
           obj[groupName] = obj[groupName] || {};
@@ -48,8 +111,8 @@ async function processCollection(collection: VariableCollection) {
           obj.value = `{${currentVar!.name.replace(/\//g, ".")}}`;
         } else {
           obj.value = resolvedType === "COLOR" ? rgbToHex(value) : value;
-
-          if (name.startsWith("lineHeights")) {
+          const pxIncludes = ["lineHeights", "fontSizes", "letterSpacings"];
+          if (pxIncludes.some((pxInclude) => name.startsWith(pxInclude))) {
             obj.value += "px";
           }
         }
@@ -57,7 +120,6 @@ async function processCollection(collection: VariableCollection) {
     }
     files.push(file);
   }
-  console.log("files", files);
   return files;
 }
 
@@ -66,12 +128,23 @@ figma.ui.onmessage = async (e) => {
   if (e.type === "EXPORT") {
     await exportToJSON();
   }
+  if (e.type === "TEXT_STYLES") {
+    await exportToJSON();
+  }
 };
-figma.showUI(__uiFiles__["export"], {
-  width: 500,
-  height: 500,
-  themeColors: true,
-});
+if (figma.command === "text-styles") {
+  figma.showUI(__uiFiles__["text-styles"], {
+    width: 500,
+    height: 500,
+    themeColors: true,
+  });
+} else if (figma.command === "export") {
+  figma.showUI(__uiFiles__["export"], {
+    width: 500,
+    height: 500,
+    themeColors: true,
+  });
+}
 
 function rgbToHex({
   r,

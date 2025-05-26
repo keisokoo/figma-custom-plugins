@@ -69,7 +69,7 @@
   }
 </style>
 <main>
-  <button id="export" type="button">Export Variables</button>
+  <button id="export" type="button">Export Text Styles</button>
   <textarea
     placeholder="Exported variables will render here..."
     readonly
@@ -78,10 +78,8 @@
 <script>
   window.onmessage = ({ data: { pluginMessage } }) => {
     if (pluginMessage.type === "EXPORT_RESULT") {
-      document.querySelector(
-        "textarea"
-      ).innerHTML = `export const figmaVariables = ${JSON.stringify(
-        pluginMessage.themeJson,
+      document.querySelector("textarea").innerHTML = `${JSON.stringify(
+        pluginMessage.textStyles,
         null,
         2
       )}`;

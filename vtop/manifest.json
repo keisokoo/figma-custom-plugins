@@ -5,7 +5,11 @@
   "editorType": ["dev"],
   "permissions": [],
   "main": "code.js",
-  "ui": { "export": "export.html" },
+  "menu": [
+    { "command": "text-styles", "name": "Text Styles" },
+    { "command": "export", "name": "Export Tokens" }
+  ],
+  "ui": { "text-styles": "textStyles.html", "export": "export.html" },
   "documentAccess": "dynamic-page",
   "capabilities": ["inspect", "vscode"]
 }
