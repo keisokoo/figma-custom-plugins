@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-console.clear();
+// console.clear();
 
 async function exportToJSON() {
   const collections = await figma.variables.getLocalVariableCollectionsAsync();
@@ -7,7 +7,22 @@ async function exportToJSON() {
   for (const collection of collections) {
     files.push(...(await processCollection(collection)));
   }
-  figma.ui.postMessage({ type: "EXPORT_RESULT", files });
+  const themeJson = files.reduce(
+    (acc: Record<string, any>, file: { fileName: string; body: any }) => {
+      acc[file.fileName] = file.body;
+      return acc;
+    },
+    {} as Record<string, any>
+  );
+  console.log("themeJson", themeJson);
+
+  const fixJson = {
+    tokens: themeJson.tokens,
+    semanticTokens: Object.assign({}, themeJson.semanticTokens, {
+      typo: themeJson.typo,
+    }),
+  };
+  figma.ui.postMessage({ type: "EXPORT_RESULT", themeJson: fixJson });
 }
 
 async function processCollection(collection: VariableCollection) {
@@ -15,7 +30,7 @@ async function processCollection(collection: VariableCollection) {
   const { name, modes, variableIds } = collection;
   const files = [];
   for (const mode of modes) {
-    const file = { fileName: `${name}.${mode.name}.tokens.json`, body: {} };
+    const file = { fileName: name, body: {} };
     for (const variableId of variableIds) {
       const { name, resolvedType, valuesByMode } =
         (await figma.variables.getVariableByIdAsync(variableId)) as Variable;
@@ -26,19 +41,23 @@ async function processCollection(collection: VariableCollection) {
           obj[groupName] = obj[groupName] || {};
           obj = obj[groupName];
         });
-        obj.$type = resolvedType === "COLOR" ? "color" : "number";
         if (value.type === "VARIABLE_ALIAS") {
           const currentVar = await figma.variables.getVariableByIdAsync(
             value.id
           );
-          obj.$value = `{${currentVar!.name.replace(/\//g, ".")}}`;
+          obj.value = `{${currentVar!.name.replace(/\//g, ".")}}`;
         } else {
-          obj.$value = resolvedType === "COLOR" ? rgbToHex(value) : value;
+          obj.value = resolvedType === "COLOR" ? rgbToHex(value) : value;
+
+          if (name.startsWith("lineHeights")) {
+            obj.value += "px";
+          }
         }
       }
     }
     files.push(file);
   }
+  console.log("files", files);
   return files;
 }
 
