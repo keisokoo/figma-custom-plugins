@@ -11,6 +11,51 @@ async function getVariable(key: string, alias: VariableAlias | undefined) {
   };
 }
 
+async function getEffectStyles() {
+  const effectStyles = await figma.getLocalEffectStylesAsync();
+  console.log(effectStyles);
+
+  const shadowStyles: Record<string, { value: string }> = {};
+
+  for (const effectStyle of effectStyles) {
+    const shadows: string[] = [];
+
+    for (const effect of effectStyle.effects) {
+      if (effect.type === "DROP_SHADOW" || effect.type === "INNER_SHADOW") {
+        const {
+          offset,
+          radius,
+          spread = 0,
+          color,
+        } = effect as DropShadowEffect | InnerShadowEffect;
+
+        // CSS box-shadow 형식으로 변환
+        const inset = effect.type === "INNER_SHADOW" ? "inset " : "";
+        const x = `${offset.x}px`;
+        const y = `${offset.y}px`;
+        const blur = `${radius}px`;
+        const spreadValue = `${spread}px`;
+        const cssColor = rgbToHex({
+          r: color.r,
+          g: color.g,
+          b: color.b,
+          a: color.a,
+        });
+
+        shadows.push(`${inset}${x} ${y} ${blur} ${spreadValue} ${cssColor}`);
+      }
+    }
+
+    if (shadows.length > 0) {
+      shadowStyles[effectStyle.name] = {
+        value: shadows.join(", "),
+      };
+    }
+  }
+
+  return shadowStyles;
+}
+
 async function getLocalTextStyles() {
   const textStyles: TextStyle[] = await figma.getLocalTextStylesAsync();
   const styles: Record<
@@ -59,6 +104,7 @@ async function getLocalTextStyles() {
 }
 async function exportToJSON() {
   const textStyles = await getLocalTextStyles();
+  const shadowStyles = await getEffectStyles();
   const collections = await figma.variables.getLocalVariableCollectionsAsync();
   const files = [];
   for (const collection of collections) {
@@ -73,9 +119,17 @@ async function exportToJSON() {
   );
 
   const fixJson = {
-    tokens: themeJson.tokens,
+    tokens: Object.assign({}, themeJson.tokens, {
+      shadow: shadowStyles,
+    }),
     semanticTokens: Object.assign({}, themeJson.semanticTokens, {
       typo: themeJson.typo,
+      shadow: Object.keys(shadowStyles).reduce((acc, shadowName) => {
+        acc[shadowName] = {
+          value: `{shadow.${shadowName}}`,
+        };
+        return acc;
+      }, {} as Record<string, { value: string }>),
     }),
     textStyles,
   };
@@ -83,6 +137,7 @@ async function exportToJSON() {
     type: "EXPORT_RESULT",
     themeJson: fixJson,
     textStyles,
+    shadowStyles,
   });
 }
 
